@@ -9,26 +9,22 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Serve frontend
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static(path.join(__dirname, "Public")));
 
 const SECRET = "novastack_secret";
 
-// Default route
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
+  res.sendFile(path.join(__dirname, "Public", "index.html"));
 });
 
-// ✅ DATABASE CONNECTION (UPDATED FOR RENDER)
 const db = mysql.createConnection({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
-  password: process.env.DB_PASS,
+  password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
-  port: process.env.DB_PORT
+  port: process.env.DB_PORT || 3306
 });
 
-// Check DB connection
 db.connect(err => {
   if (err) {
     console.error("❌ DB Connection Failed:", err);
@@ -37,7 +33,6 @@ db.connect(err => {
   }
 });
 
-// 🔐 TOKEN VERIFY
 function verifyToken(req, res, next) {
   const token = req.headers.authorization;
   if (!token) return res.status(403).json({ message: "No token" });
@@ -49,7 +44,6 @@ function verifyToken(req, res, next) {
   });
 }
 
-// 📝 SIGNUP
 app.post("/signup", async (req, res) => {
   const { name, email, password } = req.body;
 
@@ -65,7 +59,6 @@ app.post("/signup", async (req, res) => {
   );
 });
 
-// 🔑 LOGIN
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
 
@@ -91,7 +84,6 @@ app.post("/login", (req, res) => {
   );
 });
 
-// 📦 BOOK SERVICE
 app.post("/book", verifyToken, (req, res) => {
   const { service, type } = req.body;
 
@@ -105,7 +97,6 @@ app.post("/book", verifyToken, (req, res) => {
   );
 });
 
-// 📊 USER BOOKINGS
 app.get("/bookings", verifyToken, (req, res) => {
   db.query(
     "SELECT * FROM bookings WHERE user_id=?",
@@ -117,7 +108,6 @@ app.get("/bookings", verifyToken, (req, res) => {
   );
 });
 
-// 👨‍💼 ADMIN VIEW
 app.get("/admin/bookings", (req, res) => {
   db.query(`
     SELECT bookings.*, users.name
@@ -129,7 +119,6 @@ app.get("/admin/bookings", (req, res) => {
   });
 });
 
-// ❌ DELETE
 app.delete("/admin/delete/:id", (req, res) => {
   db.query(
     "DELETE FROM bookings WHERE id=?",
@@ -141,7 +130,6 @@ app.delete("/admin/delete/:id", (req, res) => {
   );
 });
 
-// ✏️ UPDATE
 app.put("/admin/update/:id", (req, res) => {
   const { service, type } = req.body;
 
@@ -155,7 +143,24 @@ app.put("/admin/update/:id", (req, res) => {
   );
 });
 
-// 🚀 START SERVER (FIXED)
+db.query(`
+CREATE TABLE IF NOT EXISTS users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(100),
+  email VARCHAR(100),
+  password VARCHAR(255)
+)
+`);
+
+db.query(`
+CREATE TABLE IF NOT EXISTS bookings (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  userEmail VARCHAR(100),
+  service VARCHAR(100)
+)
+`);
+
+
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
