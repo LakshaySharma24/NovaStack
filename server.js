@@ -9,14 +9,17 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.use(express.static(path.join(__dirname, "Public")));
-
-const SECRET = "novastack_secret";
+// ✅ STATIC FILES
+app.use(express.static(path.join(__dirname, "public")));
 
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "Public", "index.html"));
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
+// ✅ ENV BASED SECRET
+const SECRET = process.env.JWT_SECRET || "novastack_secret";
+
+// ✅ DB CONNECTION
 const db = mysql.createConnection({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -33,6 +36,26 @@ db.connect(err => {
   }
 });
 
+// ✅ CREATE TABLES (FIXED)
+db.query(`
+CREATE TABLE IF NOT EXISTS users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(100),
+  email VARCHAR(100),
+  password VARCHAR(255)
+)
+`);
+
+db.query(`
+CREATE TABLE IF NOT EXISTS bookings (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT,
+  service VARCHAR(100),
+  type VARCHAR(100)
+)
+`);
+
+// ✅ TOKEN VERIFY
 function verifyToken(req, res, next) {
   const token = req.headers.authorization;
   if (!token) return res.status(403).json({ message: "No token" });
@@ -44,6 +67,7 @@ function verifyToken(req, res, next) {
   });
 }
 
+// ================= AUTH =================
 app.post("/signup", async (req, res) => {
   const { name, email, password } = req.body;
 
@@ -72,7 +96,10 @@ app.post("/login", (req, res) => {
         const valid = await bcrypt.compare(password, result[0].password);
 
         if (valid) {
-          const token = jwt.sign({ id: result[0].id }, SECRET);
+          const token = jwt.sign(
+            { id: result[0].id },
+            SECRET
+          );
           res.json({ token, name: result[0].name });
         } else {
           res.json({ message: "Invalid" });
@@ -84,37 +111,43 @@ app.post("/login", (req, res) => {
   );
 });
 
+// ================= BOOK =================
 app.post("/book", verifyToken, (req, res) => {
   const { service, type } = req.body;
 
   db.query(
-    "INSERT INTO bookings (user_id,service,type) VALUES (?,?,?)",
+    "INSERT INTO bookings (user_id, service, type) VALUES (?, ?, ?)",
     [req.user.id, service, type],
     (err) => {
-      if (err) return res.json({ message: "Error booking" });
-      res.json({ message: "Booked" });
+      if (err) {
+        console.log(err);
+        return res.json({ message: "Error booking" });
+      }
+      res.json({ message: "Booked Successfully ✅" });
     }
   );
 });
 
-app.get("/bookings", verifyToken, (req, res) => {
+// ================= USER BOOKINGS =================
+app.get("/my-bookings", verifyToken, (req, res) => {
   db.query(
     "SELECT * FROM bookings WHERE user_id=?",
     [req.user.id],
     (err, result) => {
-      if (err) return res.json({ message: "Error" });
+      if (err) return res.json([]);
       res.json(result);
     }
   );
 });
 
+// ================= ADMIN =================
 app.get("/admin/bookings", (req, res) => {
   db.query(`
     SELECT bookings.*, users.name
     FROM bookings
     JOIN users ON bookings.user_id = users.id
   `, (err, result) => {
-    if (err) return res.json({ message: "Error" });
+    if (err) return res.json([]);
     res.json(result);
   });
 });
@@ -143,24 +176,7 @@ app.put("/admin/update/:id", (req, res) => {
   );
 });
 
-db.query(`
-CREATE TABLE IF NOT EXISTS users (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(100),
-  email VARCHAR(100),
-  password VARCHAR(255)
-)
-`);
-
-db.query(`
-CREATE TABLE IF NOT EXISTS bookings (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  userEmail VARCHAR(100),
-  service VARCHAR(100)
-)
-`);
-
-
+// ================= SERVER =================
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
