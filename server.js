@@ -6,20 +6,26 @@ const path = require("path");
 const jwt = require("jsonwebtoken");
 
 const app = express();
-app.use(cors());
+const corsOptions = {
+  origin: "https://novastackbynovasyndicate.netlify.app",
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+};
+
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
+
 app.use(express.json());
 
-// ✅ STATIC FILES
 app.use(express.static(path.join(__dirname, "public")));
 
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// ✅ ENV BASED SECRET
 const SECRET = process.env.JWT_SECRET || "novastack_secret";
 
-// ✅ DB CONNECTION
 const db = mysql.createConnection({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -36,7 +42,6 @@ db.connect(err => {
   }
 });
 
-// ✅ CREATE TABLES (FIXED)
 db.query(`
 CREATE TABLE IF NOT EXISTS users (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -55,7 +60,6 @@ CREATE TABLE IF NOT EXISTS bookings (
 )
 `);
 
-// ✅ TOKEN VERIFY
 function verifyToken(req, res, next) {
   const token = req.headers.authorization;
   if (!token) return res.status(403).json({ message: "No token" });
@@ -67,7 +71,6 @@ function verifyToken(req, res, next) {
   });
 }
 
-// ================= AUTH =================
 app.post("/signup", async (req, res) => {
   const { name, email, password } = req.body;
 
@@ -111,7 +114,6 @@ app.post("/login", (req, res) => {
   );
 });
 
-// ================= BOOK =================
 app.post("/book", verifyToken, (req, res) => {
   const { service, type } = req.body;
 
@@ -128,7 +130,6 @@ app.post("/book", verifyToken, (req, res) => {
   );
 });
 
-// ================= USER BOOKINGS =================
 app.get("/my-bookings", verifyToken, (req, res) => {
   db.query(
     "SELECT * FROM bookings WHERE user_id=?",
@@ -140,7 +141,6 @@ app.get("/my-bookings", verifyToken, (req, res) => {
   );
 });
 
-// ================= ADMIN =================
 app.get("/admin/bookings", (req, res) => {
   db.query(`
     SELECT bookings.*, users.name
@@ -176,7 +176,6 @@ app.put("/admin/update/:id", (req, res) => {
   );
 });
 
-// ================= SERVER =================
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
