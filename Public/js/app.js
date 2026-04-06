@@ -134,7 +134,7 @@ async function confirmBooking() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": "Bearer " + token   // ✅ FIXED
+        "Authorization": "Bearer " + token
       },
       body: JSON.stringify({
         service: localStorage.getItem("service"),
@@ -143,7 +143,6 @@ async function confirmBooking() {
     });
 
     const data = await res.json();
-
     showToast(data.message || "Booked Successfully ✅");
 
     setTimeout(() => {
@@ -169,11 +168,9 @@ async function loadBookings() {
   try {
     const res = await fetch(API + "/bookings", {
       headers: {
-        "Authorization": "Bearer " + token   // ✅ FIXED
+        "Authorization": "Bearer " + token
       }
     });
-
-    console.log("Status:", res.status); // debug
 
     const data = await res.json();
     container.innerHTML = "";
@@ -206,9 +203,15 @@ async function loadBookings() {
 // ================= ADMIN =================
 async function loadAdmin() {
   try {
-    const res = await fetch(API + "/admin/bookings");
-    const data = await res.json();
+    const token = localStorage.getItem("token");
 
+    const res = await fetch(API + "/admin/bookings", {
+      headers: {
+        "Authorization": "Bearer " + token
+      }
+    });
+
+    const data = await res.json();
     const container = document.getElementById("adminData");
 
     if (!Array.isArray(data)) {
