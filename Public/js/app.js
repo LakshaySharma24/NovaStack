@@ -134,7 +134,7 @@ async function confirmBooking() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": token
+        "Authorization": "Bearer " + token   // ✅ FIXED
       },
       body: JSON.stringify({
         service: localStorage.getItem("service"),
@@ -169,14 +169,15 @@ async function loadBookings() {
   try {
     const res = await fetch(API + "/bookings", {
       headers: {
-        "Authorization": token
+        "Authorization": "Bearer " + token   // ✅ FIXED
       }
     });
+
+    console.log("Status:", res.status); // debug
 
     const data = await res.json();
     container.innerHTML = "";
 
-    // ✅ Handle error response (IMPORTANT FIX)
     if (!Array.isArray(data)) {
       container.innerHTML = `<p>${data.message || "Error loading bookings"}</p>`;
       return;
