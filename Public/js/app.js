@@ -77,11 +77,14 @@ async function signup() {
 
   const data = await loginRes.json();
 
-  localStorage.setItem("token", data.token);
-  localStorage.setItem("userName", data.name);
-  localStorage.setItem("toast", "Signup Successful 🎉");
-
-  window.location.href = "index.html";
+  if (data.token) {
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("userName", data.name);
+    localStorage.setItem("toast", "Signup Successful 🎉");
+    window.location.href = "index.html";
+  } else {
+    showToast("Signup/Login failed");
+  }
 }
 
 async function login() {
@@ -126,30 +129,42 @@ async function confirmBooking() {
     return;
   }
 
-  const res = await fetch(API + "/book", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": token
-    },
-    body: JSON.stringify({
-      service: localStorage.getItem("service"),
-      type: document.getElementById("type").value
-    })
-  });
+  try {
+    const res = await fetch(API + "/book", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": token
+      },
+      body: JSON.stringify({
+        service: localStorage.getItem("service"),
+        type: document.getElementById("type").value
+      })
+    });
 
-  const data = await res.json();
+    const data = await res.json();
 
-  showToast(data.message || "Booked Successfully ✅");
+    showToast(data.message || "Booked Successfully ✅");
 
-  setTimeout(() => {
-    window.location.href = "dashboard.html";
-  }, 1000);
+    setTimeout(() => {
+      window.location.href = "dashboard.html";
+    }, 1000);
+
+  } catch (err) {
+    console.error(err);
+    showToast("Booking failed");
+  }
 }
 
 // ================= LOAD BOOKINGS =================
 async function loadBookings() {
   const token = localStorage.getItem("token");
+  const container = document.getElementById("bookings");
+
+  if (!token) {
+    container.innerHTML = "<p>Please login first</p>";
+    return;
+  }
 
   try {
     const res = await fetch(API + "/bookings", {
@@ -159,11 +174,15 @@ async function loadBookings() {
     });
 
     const data = await res.json();
-
-    const container = document.getElementById("bookings");
     container.innerHTML = "";
 
-    if (!data || data.length === 0) {
+    // ✅ Handle error response (IMPORTANT FIX)
+    if (!Array.isArray(data)) {
+      container.innerHTML = `<p>${data.message || "Error loading bookings"}</p>`;
+      return;
+    }
+
+    if (data.length === 0) {
       container.innerHTML = "<p>No bookings yet</p>";
       return;
     }
@@ -176,18 +195,31 @@ async function loadBookings() {
         </div>
       `;
     });
+
   } catch (err) {
     console.error("Error loading bookings:", err);
+    container.innerHTML = "<p>Server error</p>";
   }
 }
 
 // ================= ADMIN =================
 async function loadAdmin() {
-  const res = await fetch(API + "/admin/bookings");
-  const data = await res.json();
+  try {
+    const res = await fetch(API + "/admin/bookings");
+    const data = await res.json();
 
-  document.getElementById("adminData").innerHTML =
-    data.map(
+    const container = document.getElementById("adminData");
+
+    if (!Array.isArray(data)) {
+      container.innerHTML = "<p>Error loading admin data</p>";
+      return;
+    }
+
+    container.innerHTML = data.map(
       b => `<div class="card">👤 ${b.name}<br>${b.service} - ${b.type}</div>`
     ).join("");
+
+  } catch (err) {
+    console.error(err);
+  }
 }
