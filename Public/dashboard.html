@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/sidebar.css">
+</head>
+<body onload="loadBookings()">
+
+<div class="sidebar">
+  <h2>⚡ NovaStack</h2>
+  <a href="index.html">🏠 Home</a>
+  <a href="dashboard.html" class="active">📊 Dashboard</a>
+  <a href="login.html" id="loginLink">🔐 Login</a>
+  <a href="signup.html" id="signupLink">📝 Signup</a>
+  <a href="#" id="logoutLink" class="logout" onclick="logout()">🚪 Logout</a>
+</div>
+
+<div class="main">
+  <h2>Your Bookings</h2>
+  <div id="bookings" class="grid"></div>
+</div>
+
+<script src="js/app.js"></script>
+</body>
+</html>
+

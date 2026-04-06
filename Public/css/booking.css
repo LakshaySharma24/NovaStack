@@ -1,0 +1,76 @@
+body {
+  margin: 0;
+  font-family: 'Segoe UI';
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.booking-container {
+  background: white;
+  padding: 40px;
+  border-radius: 20px;
+  text-align: center;
+  width: 350px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.booking-container h2 {
+  margin-bottom: 10px;
+}
+
+#serviceName {
+  color: #555;
+  margin-bottom: 20px;
+}
+
+.booking-container select {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+  margin-bottom: 20px;
+}
+
+.booking-container button {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  background: #43cea2;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.booking-container button:hover {
+  transform: scale(1.05);
+  background: #2bbd91;
+}
+
+.main {
+  margin-left:260px;
+  padding:40px;
+}
+
+select,button{
+  padding:12px;
+  border-radius:10px;
+  margin-top:15px;
+}
+
+button{
+  background:#22c55e;
+  color:white;
+  border:none;
+  cursor:pointer;
+}
+
+button:hover{
+  transform:scale(1.05);
+}
+
+
