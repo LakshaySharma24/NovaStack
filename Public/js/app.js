@@ -10,7 +10,8 @@ window.addEventListener("load", () => {
   }
 
   if (document.getElementById("serviceName")) {
-    document.getElementById("serviceName").innerText = localStorage.getItem("service");
+    document.getElementById("serviceName").innerText =
+      localStorage.getItem("service");
   }
 
   if (document.getElementById("bookings")) {
@@ -150,32 +151,35 @@ async function confirmBooking() {
 async function loadBookings() {
   const token = localStorage.getItem("token");
 
-  const res = await fetch(API + "/my-bookings", {
-    headers: {
-      "Authorization": token
+  try {
+    const res = await fetch(API + "/bookings", {
+      headers: {
+        "Authorization": token
+      }
+    });
+
+    const data = await res.json();
+
+    const container = document.getElementById("bookings");
+    container.innerHTML = "";
+
+    if (!data || data.length === 0) {
+      container.innerHTML = "<p>No bookings yet</p>";
+      return;
     }
-  });
 
-  const data = await res.json();
-
-  const container = document.getElementById("bookings");
-  container.innerHTML = "";
-
-  if (!data || data.length === 0) {
-    container.innerHTML = "<p>No bookings yet</p>";
-    return;
+    data.forEach(b => {
+      container.innerHTML += `
+        <div class="card">
+          <h3>${b.service}</h3>
+          <p>${b.type || ""}</p>
+        </div>
+      `;
+    });
+  } catch (err) {
+    console.error("Error loading bookings:", err);
   }
-
-  data.forEach(b => {
-    container.innerHTML += `
-      <div class="card">
-        <h3>${b.service}</h3>
-        <p>${b.type || ""}</p>
-      </div>
-    `;
-  });
 }
-
 
 // ================= ADMIN =================
 async function loadAdmin() {
@@ -183,5 +187,7 @@ async function loadAdmin() {
   const data = await res.json();
 
   document.getElementById("adminData").innerHTML =
-    data.map(b => `<div class="card">👤 ${b.name}<br>${b.service} - ${b.type}</div>`).join("");
+    data.map(
+      b => `<div class="card">👤 ${b.name}<br>${b.service} - ${b.type}</div>`
+    ).join("");
 }
