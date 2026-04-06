@@ -6,6 +6,8 @@ const path = require("path");
 const jwt = require("jsonwebtoken");
 
 const app = express();
+
+// ================= CORS =================
 const corsOptions = {
   origin: "https://novastackbynovasyndicate.netlify.app",
   credentials: true,
@@ -17,15 +19,17 @@ app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
 
 app.use(express.json());
-
 app.use(express.static(path.join(__dirname, "public")));
 
+// ================= ROOT =================
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
+// ================= SECRET =================
 const SECRET = process.env.JWT_SECRET || "novastack_secret";
 
+// ================= DB =================
 const db = mysql.createConnection({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -42,6 +46,7 @@ db.connect(err => {
   }
 });
 
+// ================= TABLES =================
 db.query(`
 CREATE TABLE IF NOT EXISTS users (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -60,17 +65,23 @@ CREATE TABLE IF NOT EXISTS bookings (
 )
 `);
 
+// ================= AUTH =================
 function verifyToken(req, res, next) {
   const token = req.headers.authorization;
+
   if (!token) return res.status(403).json({ message: "No token" });
 
   jwt.verify(token, SECRET, (err, decoded) => {
     if (err) return res.status(401).json({ message: "Invalid token" });
+
     req.user = decoded;
     next();
   });
 }
 
+// ================= ROUTES =================
+
+// SIGNUP
 app.post("/signup", async (req, res) => {
   const { name, email, password } = req.body;
 
@@ -81,11 +92,13 @@ app.post("/signup", async (req, res) => {
     [name, email, hashedPassword],
     (err) => {
       if (err) return res.json({ message: "Error", error: err });
+
       res.json({ message: "Signup success" });
     }
   );
 });
 
+// LOGIN
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
 
@@ -99,10 +112,8 @@ app.post("/login", (req, res) => {
         const valid = await bcrypt.compare(password, result[0].password);
 
         if (valid) {
-          const token = jwt.sign(
-            { id: result[0].id },
-            SECRET
-          );
+          const token = jwt.sign({ id: result[0].id }, SECRET);
+
           res.json({ token, name: result[0].name });
         } else {
           res.json({ message: "Invalid" });
@@ -114,6 +125,7 @@ app.post("/login", (req, res) => {
   );
 });
 
+// BOOK SERVICE
 app.post("/book", verifyToken, (req, res) => {
   const { service, type } = req.body;
 
@@ -125,11 +137,31 @@ app.post("/book", verifyToken, (req, res) => {
         console.log(err);
         return res.json({ message: "Error booking" });
       }
+
       res.json({ message: "Booked Successfully ✅" });
     }
   );
 });
 
+// ================= BOOKINGS (MAIN FIX) =================
+
+// PRIMARY ROUTE
+app.get("/bookings", verifyToken, (req, res) => {
+  db.query(
+    "SELECT * FROM bookings WHERE user_id=?",
+    [req.user.id],
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        return res.json([]);
+      }
+
+      res.json(result);
+    }
+  );
+});
+
+// BACKUP ROUTE (for safety)
 app.get("/my-bookings", verifyToken, (req, res) => {
   db.query(
     "SELECT * FROM bookings WHERE user_id=?",
@@ -141,6 +173,7 @@ app.get("/my-bookings", verifyToken, (req, res) => {
   );
 });
 
+// ================= ADMIN =================
 app.get("/admin/bookings", (req, res) => {
   db.query(`
     SELECT bookings.*, users.name
@@ -176,6 +209,7 @@ app.put("/admin/update/:id", (req, res) => {
   );
 });
 
+// ================= SERVER =================
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
