@@ -161,7 +161,7 @@ async function loadBookings() {
   const container = document.getElementById("bookings");
   container.innerHTML = "";
 
-  if (data.length === 0) {
+  if (!data || data.length === 0) {
     container.innerHTML = "<p>No bookings yet</p>";
     return;
   }
@@ -175,6 +175,7 @@ async function loadBookings() {
     `;
   });
 }
+
 
 // ================= ADMIN =================
 async function loadAdmin() {
